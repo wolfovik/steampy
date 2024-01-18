@@ -48,13 +48,19 @@ class LoginExecutor:
         request_data = self._prepare_login_request_data(encrypted_password, rsa_timestamp)
         return self._api_call('POST', 'IAuthenticationService', 'BeginAuthSessionViaCredentials', params=request_data)
 
-    def set_sessionid_cookies(self):
+        def set_sessionid_cookies(self):
         community_domain = SteamUrl.COMMUNITY_URL[8:]
         store_domain = SteamUrl.STORE_URL[8:]
-        for name in ('steamLoginSecure', 'sessionid', 'steamRefresh_steam', 'steamCountry'):
+        community_cookie_dic = self.session.cookies.get_dict(domain = community_domain)
+        store_cookie_dic = self.session.cookies.get_dict(domain = store_domain)
+        for name in ['steamLoginSecure', 'sessionid', 'steamRefresh_steam', 'steamCountry']:
             cookie = self.session.cookies.get_dict()[name]
-            community_cookie = create_cookie(name, cookie, community_domain)
-            store_cookie = create_cookie(name, cookie, store_domain)
+            if name == 'steamLoginSecure':
+                community_cookie = self._create_cookie(name, community_cookie_dic['steamLoginSecure'], community_domain)
+                store_cookie = self._create_cookie(name, store_cookie_dic['steamLoginSecure'], store_domain)
+            else:
+                community_cookie = self._create_cookie(name, cookie, community_domain)
+                store_cookie = self._create_cookie(name, cookie, store_domain)
             self.session.cookies.set(**community_cookie)
             self.session.cookies.set(**store_cookie)
 
